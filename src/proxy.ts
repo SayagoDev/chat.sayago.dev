@@ -17,13 +17,16 @@ export const proxy = async (req: NextRequest) => {
     return NextResponse.redirect(new URL("/?error=room-not-found", req.url));
   }
 
+  // Asegurar que connected sea un array
+  const connected = Array.isArray(meta.connected) ? meta.connected : [];
+
   const existingToken = req.cookies.get("x-auth-token")?.value;
 
-  if (existingToken && meta.connected.includes(existingToken)) {
+  if (existingToken && connected.includes(existingToken)) {
     return NextResponse.next();
   }
 
-  if (meta.connected.length >= 2) {
+  if (connected.length >= 2) {
     return NextResponse.redirect(new URL("/?error=room-is-full", req.url));
   }
 
@@ -34,11 +37,11 @@ export const proxy = async (req: NextRequest) => {
     path: "/",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
 
   await redis.hset(`meta:${roomId}`, {
-    connected: [...meta.connected, token],
+    connected: [...connected, token],
   });
 
   return response;
