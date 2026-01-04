@@ -3,8 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.url(),
-    UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+    API_URL: z.url(),
   },
   client: {},
   experimental__runtimeEnv: {
