@@ -24,7 +24,7 @@ function formatTimeRemaining(seconds: number) {
 
 function truncateRoomId(roomId: string) {
   if (roomId.length <= 12) return roomId;
-  return `${roomId.slice(0, 5)}...${roomId.slice(-5)}`;
+  return `${roomId.slice(0, 2)}...${roomId.slice(-2)}`;
 }
 
 export default function RoomPage() {
@@ -36,6 +36,7 @@ export default function RoomPage() {
 
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { playSound } = useSound();
   const router = useRouter();
 
@@ -85,6 +86,11 @@ export default function RoomPage() {
       return res.data;
     },
   });
+
+  // Auto-scroll al final cuando lleguen nuevos mensajes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useRealtime({
     channels: [roomId],
@@ -261,6 +267,7 @@ export default function RoomPage() {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
