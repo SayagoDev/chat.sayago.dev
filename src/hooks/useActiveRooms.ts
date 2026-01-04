@@ -17,12 +17,12 @@ export function useActiveRooms() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as ActiveRoom[];
-        // Filtrar salas de más de 10 minutos (ya expiraron)
-        const validRooms = parsed.filter(
-          (room) => Date.now() - room.joinedAt < 10 * 60 * 1000
-        );
+        // Filtrar solo salas que tengan la estructura correcta
+        const validRooms = parsed.filter((room) => room.roomId && room.token);
         setRooms(validRooms);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(validRooms));
+        if (validRooms.length !== parsed.length) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(validRooms));
+        }
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }

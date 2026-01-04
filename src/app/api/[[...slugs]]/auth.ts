@@ -20,7 +20,7 @@ export const authMiddleware = new Elysia({
   })
   .derive({ as: "scoped" }, async ({ query, cookie }) => {
     const roomId = query.roomId;
-    
+
     let token: string | undefined;
     try {
       token = cookie["x-auth-token"]?.value as string | undefined;
