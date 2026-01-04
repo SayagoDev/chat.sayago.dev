@@ -5,7 +5,7 @@ import { client } from "@/lib/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CheckIcon,
-  CopyIcon,
+  LinkIcon,
   Loader2Icon,
   SendIcon,
   TrashIcon,
@@ -22,15 +22,10 @@ function formatTimeRemaining(seconds: number) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function truncateRoomId(roomId: string) {
-  if (roomId.length <= 12) return roomId;
-  return `${roomId.slice(0, 2)}...${roomId.slice(-2)}`;
-}
-
 export default function RoomPage() {
-  const [copyStatus, setCopyStatus] = useState<"copiar" | "copiado" | "error">(
-    "copiar"
-  );
+  const [copyStatus, setCopyStatus] = useState<
+    "invitar" | "generando" | "copiado" | "error"
+  >("invitar");
   const { username } = useUsername();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
@@ -113,21 +108,30 @@ export default function RoomPage() {
     },
   });
 
-  const copyLInk = () => {
-    const url = window.location.origin + "/room/" + roomId;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => {
+  const copyLInk = async () => {
+    setCopyStatus("generando");
+
+    try {
+      const res = await client.room.invite.post(null, { query: { roomId } });
+
+      if (res.status === 200 && res.data?.code) {
+        const url = window.location.origin + "/join/" + res.data.code;
+        await navigator.clipboard.writeText(url);
         playSound("copy");
         setCopyStatus("copiado");
         setTimeout(() => {
-          setCopyStatus("copiar");
-        }, 2000);
-      })
-      .catch(() => {
-        playSound("error");
-        setCopyStatus("error");
-      });
+          setCopyStatus("invitar");
+        }, 3000);
+      } else {
+        throw new Error("Failed to generate invite");
+      }
+    } catch {
+      playSound("error");
+      setCopyStatus("error");
+      setTimeout(() => {
+        setCopyStatus("invitar");
+      }, 2000);
+    }
   };
 
   const { mutate: sendMessage, isPending } = useMutation({
@@ -158,34 +162,22 @@ export default function RoomPage() {
   return (
     <main className="flex flex-col h-dvh max-h-dvh overflow-hidden">
       <header className="border-b border-zinc-800 p-4 flex items-center justify-between bg-zinc-900/30">
-        <div className="flex items-ceter gap-4">
-          <div className="flex flex-col">
-            <span className="text-xs text-zinc-500 uppercase">id de sala</span>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-green-500 hidden sm:inline">
-                {roomId}
-              </span>
-              <span className="font-bold text-green-500 sm:hidden">
-                {truncateRoomId(roomId)}
-              </span>
-
-              <button
-                className="flex items-center gap-1 text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
-                onClick={copyLInk}
-              >
-                {copyStatus === "copiado" ? (
-                  <span>
-                    <CheckIcon className="size-3" />
-                  </span>
-                ) : (
-                  <span>
-                    <CopyIcon className="size-3" />
-                  </span>
-                )}
-                {copyStatus}
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+          <button
+            className="flex items-center gap-2 text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={copyLInk}
+            disabled={copyStatus === "generando"}
+          >
+            {copyStatus === "copiado" && (
+              <CheckIcon className="size-4 text-green-500" />
+            )}
+            {copyStatus === "generando" && (
+              <Loader2Icon className="size-4 animate-spin" />
+            )}
+            {copyStatus === "invitar" && <LinkIcon className="size-4" />}
+            {copyStatus === "error" && <span className="text-red-500">!</span>}
+            <span className="uppercase font-bold">{copyStatus}</span>
+          </button>
 
           <div className="h-8 w-px bg-zinc-800" />
 

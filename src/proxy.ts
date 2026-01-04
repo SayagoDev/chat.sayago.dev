@@ -33,13 +33,11 @@ export const proxy = async (req: NextRequest) => {
   const response = NextResponse.next();
   const token = nanoid();
 
-  const isProduction = process.env.NODE_ENV === "production";
-
   response.cookies.set("x-auth-token", token, {
     path: "/",
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
   });
 
   await redis.hset(`meta:${roomId}`, {
