@@ -55,11 +55,12 @@ export async function GET(
   );
 
   // Establecer cookie httpOnly
+  // Usar "lax" para permitir que la cookie se establezca en navegaciones cross-site
   response.cookies.set("x-auth-token", token, {
     path: "/",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
 
   return response;
