@@ -22,6 +22,11 @@ function formatTimeRemaining(seconds: number) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+function truncateRoomId(roomId: string) {
+  if (roomId.length <= 12) return roomId;
+  return `${roomId.slice(0, 5)}...${roomId.slice(-5)}`;
+}
+
 export default function RoomPage() {
   const [copyStatus, setCopyStatus] = useState<"copiar" | "copiado" | "error">(
     "copiar"
@@ -145,13 +150,18 @@ export default function RoomPage() {
   });
 
   return (
-    <main className="flex flex-col h-screen max-h-screen overflow-hidden">
+    <main className="flex flex-col h-dvh max-h-dvh overflow-hidden">
       <header className="border-b border-zinc-800 p-4 flex items-center justify-between bg-zinc-900/30">
         <div className="flex items-ceter gap-4">
           <div className="flex flex-col">
             <span className="text-xs text-zinc-500 uppercase">id de sala</span>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-green-500">{roomId}</span>
+              <span className="font-bold text-green-500 hidden sm:inline">
+                {roomId}
+              </span>
+              <span className="font-bold text-green-500 sm:hidden">
+                {truncateRoomId(roomId)}
+              </span>
 
               <button
                 className="flex items-center gap-1 text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
@@ -200,12 +210,12 @@ export default function RoomPage() {
         </div>
         <button
           onClick={() => destroyRoom()}
-          className="text-xs bg-zinc-800 hover:bg-red-600 px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold  transition-all group flex items-center gap-2 disabled:opacity-50"
+          className="text-xs bg-zinc-800 hover:bg-red-600 px-2 sm:px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold  transition-all group flex items-center gap-2 disabled:opacity-50"
         >
           <span className="group-hover:animate-pulse">
             <TrashIcon className="size-4 -translate-y-px" />
           </span>
-          DESTRUIR AHORA
+          <span className="hidden sm:inline">DESTRUIR AHORA</span>
         </button>
       </header>
 
