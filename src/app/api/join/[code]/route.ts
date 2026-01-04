@@ -2,7 +2,7 @@ import { redis } from "@/lib/redis";
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
@@ -15,7 +15,10 @@ export async function GET(
   );
 
   if (!invite) {
-    return NextResponse.redirect(new URL("/?error=invalid-invite", req.url));
+    return NextResponse.json(
+      { error: "Invitación inválida o expirada" },
+      { status: 400 }
+    );
   }
 
   // Verificar que la sala existe
@@ -27,14 +30,17 @@ export async function GET(
   if (!meta) {
     await redis.del(`invite:${upperCode}`);
     await redis.srem(`invites:${invite.roomId}`, upperCode);
-    return NextResponse.redirect(new URL("/?error=room-not-found", req.url));
+    return NextResponse.json(
+      { error: "La sala ya no existe" },
+      { status: 400 }
+    );
   }
 
   const connected = Array.isArray(meta.connected) ? meta.connected : [];
 
   // Verificar que la sala no está llena
   if (connected.length >= 2) {
-    return NextResponse.redirect(new URL("/?error=room-is-full", req.url));
+    return NextResponse.json({ error: "La sala está llena" }, { status: 400 });
   }
 
   // Eliminar invitación (un solo uso)
@@ -49,18 +55,15 @@ export async function GET(
     connected: [...connected, token],
   });
 
-  // Crear response con redirección
-  const response = NextResponse.redirect(
-    new URL(`/room/${invite.roomId}`, req.url)
-  );
+  // Crear response con cookie y token
+  const response = NextResponse.json({ roomId: invite.roomId, token });
 
-  // Establecer cookie httpOnly
-  // Usar "lax" para permitir que la cookie se establezca en navegaciones cross-site
   response.cookies.set("x-auth-token", token, {
     path: "/",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
+    maxAge: 60 * 10,
   });
 
   return response;

@@ -82,7 +82,58 @@ const rooms = new Elysia({ prefix: "/room" })
       }),
     }
   )
+  // Endpoint para restaurar token (sin auth porque la cookie puede estar mal)
+  .post(
+    "/restore",
+    async ({ body, cookie }) => {
+      const { roomId, token } = body;
+
+      // Verificar que la sala existe y el token es válido
+      const meta = await redis.hgetall<{
+        connected: string[];
+        createdAt: number;
+      }>(`meta:${roomId}`);
+
+      if (!meta) {
+        throw new Error("Room no longer exists");
+      }
+
+      const connected = Array.isArray(meta.connected) ? meta.connected : [];
+
+      if (!connected.includes(token)) {
+        throw new Error("Invalid token");
+      }
+
+      // Establecer la cookie
+      cookie["x-auth-token"].value = token;
+      cookie["x-auth-token"].path = "/";
+      cookie["x-auth-token"].httpOnly = true;
+      cookie["x-auth-token"].secure = process.env.NODE_ENV === "production";
+      cookie["x-auth-token"].sameSite = "strict";
+      cookie["x-auth-token"].maxAge = 60 * 10;
+
+      return { success: true };
+    },
+    {
+      body: z.object({
+        roomId: z.string(),
+        token: z.string(),
+      }),
+    }
+  )
   .use(authMiddleware)
+  // Endpoint para obtener el token actual (después de authMiddleware)
+  .get(
+    "/token",
+    async ({ auth }) => {
+      return { token: auth.token };
+    },
+    {
+      query: z.object({
+        roomId: z.string(),
+      }),
+    }
+  )
   .get(
     "/ttl",
     async ({ auth }) => {

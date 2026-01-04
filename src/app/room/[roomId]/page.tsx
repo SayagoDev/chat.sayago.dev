@@ -1,5 +1,6 @@
 "use client";
 
+import { useActiveRooms } from "@/hooks/useActiveRooms";
 import { useUsername } from "@/hooks/useUsername";
 import { client } from "@/lib/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ export default function RoomPage() {
   >("invitar");
   const { username } = useUsername();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const { addRoom, removeRoom } = useActiveRooms();
 
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +39,21 @@ export default function RoomPage() {
 
   const params = useParams();
   const roomId = params.roomId as string;
+
+  // Obtener token y guardarlo en localStorage
+  const { data: tokenData } = useQuery({
+    queryKey: ["token", roomId],
+    queryFn: async () => {
+      const res = await client.room.token.get({ query: { roomId } });
+      return res.data;
+    },
+  });
+
+  useEffect(() => {
+    if (tokenData?.token) {
+      addRoom(roomId, tokenData.token);
+    }
+  }, [roomId, tokenData?.token, addRoom]);
 
   const { data: ttlData } = useQuery({
     queryKey: ["ttl", roomId],
@@ -101,6 +118,7 @@ export default function RoomPage() {
 
       if (event === "chat.destroy") {
         playSound("destroy");
+        removeRoom(roomId);
         setTimeout(() => {
           router.push("/?destroyed=true");
         }, 700);
