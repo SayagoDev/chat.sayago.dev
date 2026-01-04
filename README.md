@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# >chat_privado
 
-## Getting Started
+Un chat privado que se autodestruye.
 
-First, run the development server:
+## Tecnologías Utilizadas
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js
+- Tailwind CSS
+- TypeScript
+- Redis
+- Elysia
+- Upstash Realtime
+- Tanstack Query
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Arquitectura del Sistema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Visión General
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Índice Propuesto para el README
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. 🚀 Descripción del Proyecto
+2. 🛠️ Tecnologías Utilizadas
+3. 🏛️ Arquitectura del Sistema
+4. 🌐 Diagrama de Flujo
+5. ⚙️ Instrucciones de Instalación y Setup
+   - Prerequisitos
+   - Instalación
+   - Variables de Entorno
+   - Ejecución local
+6. 📝 Uso y Flujos de la App
+   - Crear Sala Segura
+   - Invitar Usuario
+   - Unirse vía Código de Invitación
+   - Volver a Entrar (Salas Activas)
+   - Destruir Sala
+7. 🔑 Seguridad y Privacidad
+8. 🗄️ Estructuras de Datos en Redis
+9. 🧩 Estructura del Código/Folders
+10. 🛤️ Roadmap y Mejoras Próximas
+11. 🖼️ Screenshots y Demos
+12. 📄 Licencia
+13. 🙋‍♂️ Contribución y Contacto
