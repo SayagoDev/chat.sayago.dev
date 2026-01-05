@@ -1,6 +1,7 @@
-import { redis } from "@/lib/redis";
+import { JoinButton } from "./_components/JoinButton";
+import { joinDal } from "@/data/join.dal";
+import { roomDal } from "@/data/room.dal";
 import { redirect } from "next/navigation";
-import { JoinButton } from "./join-button";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -10,28 +11,11 @@ export default async function JoinPage({ params }: Props) {
   const { code } = await params;
   const upperCode = code.toUpperCase();
 
-  // Verificar que la invitación existe
-  const invite = await redis.get<{ roomId: string; createdBy: string }>(
-    `invite:${upperCode}`
-  );
+  const invite = await joinDal.getInvitation(upperCode);
 
-  if (!invite) {
-    redirect("/?error=invalid-invite");
-  }
+  const meta = await roomDal.getAllRooms(invite);
 
-  // Verificar que la sala existe
-  const meta = await redis.hgetall<{
-    connected: string[];
-    createdAt: number;
-  }>(`meta:${invite.roomId}`);
-
-  if (!meta) {
-    redirect("/?error=room-not-found");
-  }
-
-  const connected = Array.isArray(meta.connected) ? meta.connected : [];
-
-  if (connected.length >= 2) {
+  if (meta.connected.length >= 2) {
     redirect("/?error=room-is-full");
   }
 

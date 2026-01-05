@@ -16,7 +16,7 @@ const ANIMALS = [
   "dragón",
 ];
 
-export const STORAGE_KEY = "chat_username";
+export const STORAGE_KEY_USERNAME = "chat_username";
 
 export const generateUsername = () => {
   const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];

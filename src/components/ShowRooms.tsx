@@ -1,6 +1,7 @@
-import { useActiveRooms } from "@/hooks/useActiveRooms";
+import { roomDal } from "@/data/room.dal";
+import { ActiveRoom, useActiveRooms } from "@/hooks/useActiveRooms";
 import { SoundType, useSound } from "@/hooks/useSound";
-import { client } from "@/lib/client";
+import { useMutation } from "@tanstack/react-query";
 import { ArrowRightIcon, Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,24 +14,24 @@ export function ShowRooms() {
 
   const router = useRouter();
 
-  const enterRoom = async (roomId: string, token: string) => {
-    setEnteringRoom(roomId);
-    try {
-      const res = await client.room.restore.post({ roomId, token });
-      if (res.status === 200) {
-        router.push(`/room/${roomId}`);
-      } else {
-        // Token inválido o sala no existe, remover de la lista
-        removeRoom(roomId);
-        playSound(SoundType.Error);
-      }
-    } catch {
+  const { mutate: enterRoom } = useMutation({
+    mutationFn: async ({
+      roomId,
+      token,
+    }: Pick<ActiveRoom, "roomId" | "token">) =>
+      await roomDal.restoreRoom(roomId, token),
+    onSuccess: ({ roomId }) => {
+      router.push(`/room/${roomId}`);
+    },
+    onError: (error, { roomId }) => {
       removeRoom(roomId);
       playSound(SoundType.Error);
-    } finally {
+      router.push(`/?error=${error.message}`);
+    },
+    onSettled: () => {
       setEnteringRoom(null);
-    }
-  };
+    },
+  });
 
   return (
     <>
@@ -49,14 +50,16 @@ export function ShowRooms() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => removeRoom(room.roomId)}
-                    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
                   >
                     olvidar
                   </button>
                   <button
-                    onClick={() => enterRoom(room.roomId, room.token)}
+                    onClick={() =>
+                      enterRoom({ roomId: room.roomId, token: room.token })
+                    }
                     disabled={enteringRoom === room.roomId}
-                    className="flex items-center gap-1 text-xs text-green-500 hover:text-green-400 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-xs text-green-500 hover:text-green-400 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {enteringRoom === room.roomId ? (
                       <Loader2Icon className="size-3 animate-spin" />

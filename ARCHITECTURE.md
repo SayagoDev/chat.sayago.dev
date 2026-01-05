@@ -79,6 +79,27 @@ sequenceDiagram
 
 ---
 
+### Proxy
+
+1. Get the request
+2. Get a roomMath
+3. Extract the roomId frm the request
+4. Get the meta data from the room
+
+- Check if the room exists
+- if not return to /?error=room-not-found
+
+5. Check if connected is an Array
+6. Get the existing token from the request
+
+- if exist and is in connected return .next()
+
+7. If connected length is greater or equal to 2 return to /?error=room-is-full
+8. Create a new token
+9. Set the new token in the connected array
+10. Set the cookie to x-auto-token
+11. return the response
+
 ## Flujo 2: Invitar Usuario
 
 ```mermaid
