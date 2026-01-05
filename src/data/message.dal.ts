@@ -1,11 +1,17 @@
 import { client } from "@/lib/client";
 
 export const messageDal = {
-  async post(username: string, text: string, roomId: string) {
+  async post(
+    username: string,
+    text: string,
+    roomId: string,
+    type: "message" | "system" = "message"
+  ) {
     const res = await client.messages.post(
       {
         sender: username,
         text,
+        type,
       },
       {
         query: { roomId },

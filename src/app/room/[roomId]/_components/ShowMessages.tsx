@@ -16,49 +16,62 @@ export function ShowMessages({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const hasRealMessages = messages?.some((msg) => msg.type !== "system");
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-      {messages?.length === 0 && (
-        <div className="flex items-center justify-center h-full">
+    <div className="flex-1 overflow-y-auto p-4 scrollbar-thin flex flex-col space-y-4">
+      {!hasRealMessages && (
+        <div className="flex-1 flex items-center justify-center">
           <p className="text-zinc-600 text-sm font-mono">
             No hay mensajes en esta sala, empieza la conversación.
           </p>
         </div>
       )}
 
-      {messages?.map((msg) => (
-        <div
-          key={msg.id}
-          className={`flex flex-col items-end ${
-            msg.sender === username ? "items-end" : "items-start"
-          }`}
-        >
-          <div className="max-w-[80%] group">
-            <div
-              className={`flex items-baseline gap-3 mb-1 ${
-                msg.sender === username ? "justify-end" : "justify-start"
-              }`}
-            >
-              <span
-                className={`text-sm font-bold ${
-                  msg.sender === username
-                    ? "text-green-500 order-1"
-                    : "text-blue-500"
-                }`}
-              >
-                {msg.sender === username ? "Tú" : msg.sender}
-              </span>
-              <span className="text-[10px] text-zinc-600">
-                {format(msg.timestamp, "HH:mm")}
-              </span>
-            </div>
-
-            <p className="text-sm text-zinc-300 leading-relaxed break-all">
-              {msg.text}
+      {messages?.map((msg) =>
+        msg.type === "system" ? (
+          // Mensaje de sistema (ej: "X se ha unido a la sala")
+          <div key={msg.id} className="flex items-center justify-center">
+            <p className="text-zinc-600 text-sm font-mono text-center">
+              <span className="font-bold">{msg.sender}</span> {msg.text} (
+              {format(msg.timestamp, "HH:mm")})
             </p>
           </div>
-        </div>
-      ))}
+        ) : (
+          // Mensaje normal
+          <div
+            key={msg.id}
+            className={`flex flex-col ${
+              msg.sender === username ? "items-end" : "items-start"
+            }`}
+          >
+            <div className="max-w-[80%] group">
+              <div
+                className={`flex items-baseline gap-3 mb-1 ${
+                  msg.sender === username ? "justify-end" : "justify-start"
+                }`}
+              >
+                <span
+                  className={`text-sm font-bold ${
+                    msg.sender === username
+                      ? "text-green-500 order-1"
+                      : "text-blue-500"
+                  }`}
+                >
+                  {msg.sender === username ? "Tú" : msg.sender}
+                </span>
+                <span className="text-[10px] text-zinc-600">
+                  {format(msg.timestamp, "HH:mm")}
+                </span>
+              </div>
+
+              <p className="text-sm text-zinc-300 leading-relaxed break-all">
+                {msg.text}
+              </p>
+            </div>
+          </div>
+        )
+      )}
       <div ref={messagesEndRef} />
     </div>
   );

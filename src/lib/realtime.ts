@@ -9,6 +9,7 @@ const message = z.object({
   timestamp: z.number(),
   roomId: z.string(),
   token: z.string().optional(),
+  type: z.enum(["message", "system"]).default("message"),
 });
 
 const schema = {

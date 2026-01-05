@@ -4,9 +4,9 @@ import { useActiveRooms } from "@/hooks/useActiveRooms";
 import { SoundType, useSound } from "@/hooks/useSound";
 import { useUsername } from "@/hooks/useUsername";
 import { useRealtime } from "@/lib/realtime-client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Autodestroy } from "./_components/Autodestroy";
 import { DestroyRoom } from "./_components/DestroyRoom";
 import { SendMessage } from "./_components/SendMessage";
@@ -18,6 +18,7 @@ import { roomDal } from "@/data/room.dal";
 export default function RoomPage() {
   const { username } = useUsername();
   const { addRoom, removeRoom } = useActiveRooms();
+  const hasJoinedRef = useRef(false);
 
   const { playSound } = useSound();
   const router = useRouter();
@@ -36,11 +37,29 @@ export default function RoomPage() {
     queryFn: () => messageDal.get(roomId),
   });
 
+  // Mutación para enviar mensaje de sistema al unirse
+  const { mutate: sendJoinMessage } = useMutation({
+    mutationFn: () =>
+      messageDal.post(username, "se ha unido a la sala", roomId, "system"),
+  });
+
   useEffect(() => {
     if (token) {
       addRoom(roomId, token);
     }
   }, [roomId, token, addRoom]);
+
+  // Enviar mensaje de "se ha unido" solo una vez por sesión
+  useEffect(() => {
+    const joinedKey = `joined:${roomId}`;
+    const alreadyJoined = sessionStorage.getItem(joinedKey);
+
+    if (token && username && !alreadyJoined && !hasJoinedRef.current) {
+      hasJoinedRef.current = true;
+      sessionStorage.setItem(joinedKey, "true");
+      sendJoinMessage();
+    }
+  }, [token, username, roomId, sendJoinMessage]);
 
   useRealtime({
     channels: [roomId],

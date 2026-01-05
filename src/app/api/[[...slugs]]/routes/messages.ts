@@ -10,7 +10,7 @@ export const messagesPlugin = new Elysia({ prefix: "/messages" })
   .post(
     "/",
     async ({ body, auth, set }) => {
-      const { sender, text } = body;
+      const { sender, text, type = "message" } = body;
       const { roomId } = auth;
 
       const roomExists = await redis.exists(`meta:${roomId}`);
@@ -26,6 +26,7 @@ export const messagesPlugin = new Elysia({ prefix: "/messages" })
         text,
         timestamp: Date.now(),
         roomId,
+        type,
       };
 
       await redis.rpush(`messages:${roomId}`, {
@@ -53,6 +54,7 @@ export const messagesPlugin = new Elysia({ prefix: "/messages" })
         text: z.string().max(50, {
           message: "El mensaje no puede tener más de 50 caracteres",
         }),
+        type: z.enum(["message", "system"]).optional(),
       }),
       response: {
         200: t.Object({ success: t.Literal(true) }),
