@@ -2,8 +2,9 @@ import { Elysia } from "elysia";
 import { messagesPlugin } from "./routes/messages";
 import { roomsPlugin } from "./routes/rooms";
 import { joinPlugin } from "./routes/join";
+import { openapi, fromTypes } from "@elysiajs/openapi";
 
-const app = new Elysia({ prefix: "/api" })
+export const app = new Elysia({ prefix: "/api" })
   .onError(({ code, error, set }) => {
     const message = error instanceof Error ? error.message : String(error);
     // console.error(`[API Error] ${code}:`, message);
@@ -47,6 +48,11 @@ const app = new Elysia({ prefix: "/api" })
       code: "internal-error",
     };
   })
+  .use(
+    openapi({
+      references: fromTypes(),
+    })
+  )
   .use(roomsPlugin)
   .use(messagesPlugin)
   .use(joinPlugin);

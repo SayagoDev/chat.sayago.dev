@@ -1,9 +1,20 @@
+import { ActiveRoom } from "@/contexts/ActiveRoomsContext";
 import { client } from "@/lib/client";
+import { STORAGE_KEY_ACTIVE_ROOMS } from "@/lib/constants";
 import { redis } from "@/lib/redis";
 import { redirect } from "next/navigation";
 
 export const roomDal = {
   async create() {
+    const activeRooms = localStorage.getItem(STORAGE_KEY_ACTIVE_ROOMS);
+    if (activeRooms) {
+      const parsed = JSON.parse(activeRooms) as ActiveRoom[];
+      if (parsed.length >= 3) {
+        throw new Error(
+          "Has alcanzado el máximo de salas permitidas. Elimina una sala para crear una nueva"
+        );
+      }
+    }
     const res = await client.room.create.post();
 
     if (res.status !== 200) {
@@ -83,5 +94,21 @@ export const roomDal = {
     }
 
     return { roomId, success: true };
+  },
+
+  async deleteToken(roomId: string, token: string) {
+    const res = await client.room["delete-token"].post({
+      roomId,
+      token,
+    });
+
+    if (res.error) {
+      if ("code" in res.error.value) {
+        throw new Error(res.error.value.code);
+      }
+      throw new Error("validation-error");
+    }
+
+    return res.data;
   },
 };

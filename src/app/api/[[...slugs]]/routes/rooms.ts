@@ -69,6 +69,71 @@ export const roomsPlugin = new Elysia({ prefix: "/room" })
       },
     }
   )
+  // TTL público - no requiere autenticación, solo verifica que la sala existe
+  .get(
+    "/ttl",
+    async ({ query, set }) => {
+      const ttl = await redis.ttl(`meta:${query.roomId}`);
+
+      if (ttl === -2) {
+        // La sala no existe
+        set.status = 404;
+        return { error: "room-not-found" };
+      }
+
+      return { ttl: ttl > 0 ? ttl : 0 };
+    },
+    {
+      query: z.object({
+        roomId: z.string(),
+      }),
+    }
+  )
+  .post(
+    "/delete-token",
+    async ({ body, set }) => {
+      const { roomId, token } = body;
+
+      const connected = await redis.hget<string[]>(
+        `meta:${roomId}`,
+        "connected"
+      );
+
+      if (!connected) {
+        set.status = 404;
+        return { code: "room-not-found" as const };
+      }
+
+      const newConnected = connected.filter((t) => t !== token);
+
+      if (newConnected.length === 0) {
+        await Promise.all([
+          redis.del(roomId),
+          redis.del(`meta:${roomId}`),
+          redis.del(`messages:${roomId}`),
+          redis.del(`invites:${roomId}`),
+        ]);
+
+        return { success: true as const };
+      }
+
+      await redis.hset(`meta:${roomId}`, {
+        connected: newConnected,
+      });
+
+      return { success: true as const };
+    },
+    {
+      body: z.object({
+        roomId: z.string(),
+        token: z.string(),
+      }),
+      response: {
+        200: t.Object({ success: t.Literal(true) }),
+        404: t.Object({ code: t.Literal("room-not-found") }),
+      },
+    }
+  )
   .use(authMiddleware)
   .get(
     "/token",
@@ -104,19 +169,6 @@ export const roomsPlugin = new Elysia({ prefix: "/room" })
       }
 
       return { code };
-    },
-    {
-      query: z.object({
-        roomId: z.string(),
-      }),
-    }
-  )
-  .get(
-    "/ttl",
-    async ({ auth }) => {
-      const ttl = await redis.ttl(`meta:${auth.roomId}`);
-
-      return { ttl: ttl > 0 ? ttl : 0 };
     },
     {
       query: z.object({

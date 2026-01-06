@@ -42,4 +42,19 @@ export const messageDal = {
 
     return res.data.messages;
   },
+  async deleteMessages(roomId: string, token: string) {
+    const res = await client.messages["delete"].post({
+      roomId,
+      token,
+    });
+
+    if (res.error) {
+      if ("code" in res.error.value) {
+        throw new Error(res.error.value.code);
+      }
+      throw new Error("validation-error");
+    }
+
+    return res.data;
+  },
 };

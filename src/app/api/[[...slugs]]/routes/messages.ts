@@ -6,6 +6,40 @@ import { Message, realtime } from "@/lib/realtime";
 import z from "zod";
 
 export const messagesPlugin = new Elysia({ prefix: "/messages" })
+  .post(
+    "/delete",
+    async ({ body, set }) => {
+      const { roomId, token } = body;
+
+      const allMessages = await redis.lrange<Message>(
+        `messages:${roomId}`,
+        0,
+        -1
+      );
+
+      const idsToRemove = allMessages
+        .filter((msg) => msg.token === token && msg.type !== "system")
+        .map((msg) => JSON.stringify(msg));
+
+      await Promise.all(
+        idsToRemove.map((msgJson) =>
+          redis.lrem(`messages:${roomId}`, 0, msgJson)
+        )
+      );
+
+      return { success: true as const };
+    },
+    {
+      body: z.object({
+        roomId: z.string(),
+        token: z.string(),
+      }),
+      response: {
+        200: t.Object({ success: t.Literal(true) }),
+        404: t.Object({ code: t.Literal("room-not-found") }),
+      },
+    }
+  )
   .use(authMiddleware)
   .post(
     "/",
