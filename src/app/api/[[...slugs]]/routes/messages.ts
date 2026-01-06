@@ -40,6 +40,68 @@ export const messagesPlugin = new Elysia({ prefix: "/messages" })
       },
     }
   )
+  .post(
+    "/system",
+    async ({ body, set }) => {
+      const { roomId, token, sender, text } = body;
+
+      // Validar que la sala existe y el token es válido
+      const meta = await redis.hgetall<{
+        connected: string[];
+        createdAt: number;
+      }>(`meta:${roomId}`);
+
+      if (!meta) {
+        set.status = 404;
+        return { code: "room-not-found" as const };
+      }
+
+      const connected = Array.isArray(meta.connected) ? meta.connected : [];
+
+      if (!connected.includes(token)) {
+        set.status = 400;
+        return { code: "invalid-token" as const };
+      }
+
+      const message: Message = {
+        id: nanoid(),
+        sender,
+        text,
+        timestamp: Date.now(),
+        roomId,
+        type: "system",
+      };
+
+      await redis.rpush(`messages:${roomId}`, {
+        ...message,
+        token,
+      });
+
+      await realtime.channel(roomId).emit("chat.message", message);
+
+      const remaining = await redis.ttl(`meta:${roomId}`);
+
+      await Promise.all([
+        redis.expire(`messages:${roomId}`, remaining),
+        redis.expire(roomId, remaining),
+      ]);
+
+      return { success: true as const };
+    },
+    {
+      body: z.object({
+        roomId: z.string(),
+        token: z.string(),
+        sender: z.string().max(100),
+        text: z.string().max(50),
+      }),
+      response: {
+        200: t.Object({ success: t.Literal(true) }),
+        404: t.Object({ code: t.Literal("room-not-found") }),
+        400: t.Object({ code: t.Literal("invalid-token") }),
+      },
+    }
+  )
   .use(authMiddleware)
   .post(
     "/",

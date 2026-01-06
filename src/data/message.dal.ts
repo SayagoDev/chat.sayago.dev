@@ -42,6 +42,32 @@ export const messageDal = {
 
     return res.data.messages;
   },
+  async postSystem(
+    username: string,
+    text: string,
+    roomId: string,
+    token: string
+  ) {
+    const res = await client.messages.system.post({
+      roomId,
+      token,
+      sender: username,
+      text,
+    });
+
+    if (res.error) {
+      const { message, code } = res.error.value as {
+        code?: string;
+        message?: string;
+      };
+      throw new Error(
+        message || code || "Error al enviar el mensaje de sistema"
+      );
+    }
+
+    return { success: true };
+  },
+
   async deleteMessages(roomId: string, token: string) {
     const res = await client.messages["delete"].post({
       roomId,

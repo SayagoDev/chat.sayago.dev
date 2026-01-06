@@ -13,17 +13,22 @@ export function ShowRooms() {
   const { rooms, removeRoom } = useActiveRooms();
   const { username } = useUsername();
   const { playSound } = useSound();
-
   const router = useRouter();
 
-  const isMobile = window.innerWidth < 480;
+  // Estado para trackear qué sala específica está siendo procesada
+  const [enteringRoomId, setEnteringRoomId] = useState<string | null>(null);
+  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
 
-  const { mutate: enterRoom, isPending: isEnteringRoom } = useMutation({
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 480;
+
+  const { mutate: enterRoom } = useMutation({
     mutationFn: async ({
       roomId,
       token,
-    }: Pick<ActiveRoom, "roomId" | "token">) =>
-      await roomDal.restoreRoom(roomId, token),
+    }: Pick<ActiveRoom, "roomId" | "token">) => {
+      setEnteringRoomId(roomId);
+      return await roomDal.restoreRoom(roomId, token);
+    },
     onSuccess: ({ roomId }) => {
       router.push(`/room/${roomId}`);
     },
@@ -32,19 +37,24 @@ export function ShowRooms() {
       playSound(SoundType.Error);
       router.push(`/?error=${error.message}`);
     },
+    onSettled: () => {
+      setEnteringRoomId(null);
+    },
   });
 
-  const { mutate: deleteToken, isPending } = useMutation({
+  const { mutate: deleteToken } = useMutation({
     mutationFn: async ({
       roomId,
       token,
     }: Pick<ActiveRoom, "roomId" | "token">) => {
-      // Primero enviar mensaje de sistema (requiere token válido)
-      await messageDal.post(
+      setDeletingRoomId(roomId);
+
+      // Primero enviar mensaje de sistema usando el token guardado
+      await messageDal.postSystem(
         username,
         "se ha salido de la sala",
         roomId,
-        "system"
+        token
       );
 
       // Luego eliminar token y mensajes en paralelo
@@ -60,6 +70,9 @@ export function ShowRooms() {
     onError: (error) => {
       playSound(SoundType.Error);
       router.push(`/?error=${error.message}`);
+    },
+    onSettled: () => {
+      setDeletingRoomId(null);
     },
   });
 
@@ -88,7 +101,7 @@ export function ShowRooms() {
                     : room.roomId}
                 </span>
                 <div className="flex items-center gap-3">
-                  {isPending ? (
+                  {deletingRoomId === room.roomId ? (
                     <span className="w-[46px] inline-flex items-center justify-center">
                       <Loader2Icon className="size-4 animate-spin mr-2 translate-y-px" />
                     </span>
@@ -97,13 +110,15 @@ export function ShowRooms() {
                       onClick={() =>
                         deleteToken({ roomId: room.roomId, token: room.token })
                       }
-                      disabled={isPending}
-                      className="w-[42px] inline-flex items-center justify-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer ml-1"
+                      disabled={
+                        deletingRoomId !== null || enteringRoomId !== null
+                      }
+                      className="w-[42px] inline-flex items-center justify-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer ml-1 disabled:opacity-50"
                     >
                       olvidar
                     </button>
                   )}
-                  {isEnteringRoom ? (
+                  {enteringRoomId === room.roomId ? (
                     <span className="w-[62px] inline-flex items-center justify-center">
                       <Loader2Icon className="size-4 animate-spin mr-2 translate-y-px text-green-500" />
                     </span>
@@ -112,7 +127,9 @@ export function ShowRooms() {
                       onClick={() =>
                         enterRoom({ roomId: room.roomId, token: room.token })
                       }
-                      disabled={isEnteringRoom}
+                      disabled={
+                        enteringRoomId !== null || deletingRoomId !== null
+                      }
                       className="w-[62px] flex items-center gap-1 justify-center text-xs text-green-500 hover:text-green-400 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <span>entrar</span>
