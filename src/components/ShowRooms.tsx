@@ -16,6 +16,8 @@ export function ShowRooms() {
 
   const router = useRouter();
 
+  const isMobile = window.innerWidth < 480;
+
   const { mutate: enterRoom, isPending: isEnteringRoom } = useMutation({
     mutationFn: async ({
       roomId,
@@ -81,11 +83,13 @@ export function ShowRooms() {
                   />
                 </div>
                 <span className="text-sm text-zinc-400 font-mono truncate max-w-[180px]">
-                  {room.roomId}
+                  {isMobile
+                    ? `${room.roomId.slice(0, 3)}...${room.roomId.slice(-3)}`
+                    : room.roomId}
                 </span>
                 <div className="flex items-center gap-3">
                   {isPending ? (
-                    <span className="w-[42px] inline-flex items-center justify-center">
+                    <span className="w-[46px] inline-flex items-center justify-center">
                       <Loader2Icon className="size-4 animate-spin mr-2 translate-y-px" />
                     </span>
                   ) : (
@@ -94,7 +98,7 @@ export function ShowRooms() {
                         deleteToken({ roomId: room.roomId, token: room.token })
                       }
                       disabled={isPending}
-                      className="w-[42px] inline-flex items-center justify-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
+                      className="w-[42px] inline-flex items-center justify-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer ml-1"
                     >
                       olvidar
                     </button>
